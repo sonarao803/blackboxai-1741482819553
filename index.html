@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Cube Game</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+        }
+        #info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-family: Arial, sans-serif;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="info">
+        Controls:<br>
+        WASD - Move<br>
+        V - Switch Camera Mode<br>
+        Middle Mouse Scroll - Zoom
+    </div>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.157.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.157.0/examples/jsm/"
+            }
+        }
+    </script>
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        // Scene setup
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Create cube
+        const geometry = new THREE.BoxGeometry(1, 1, 1);
+        const material = new THREE.MeshPhongMaterial({ color: 0x00ff00 });
+        const cube = new THREE.Mesh(geometry, material);
+        scene.add(cube);
+
+        // Add lights
+        const ambientLight = new THREE.AmbientLight(0x404040);
+        scene.add(ambientLight);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+        directionalLight.position.set(5, 5, 5);
+        scene.add(directionalLight);
+
+        // Camera setup
+        let isFirstPerson = false;
+        camera.position.set(0, 2, 5);
+        camera.lookAt(cube.position);
+
+        // Controls
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxDistance = 10;
+        controls.minDistance = 2;
+
+        // Movement variables
+        const moveSpeed = 0.1;
+        const keysPressed = {};
+
+        // Event listeners
+        document.addEventListener('keydown', (event) => {
+            keysPressed[event.key.toLowerCase()] = true;
+            
+            if (event.key.toLowerCase() === 'v') {
+                isFirstPerson = !isFirstPerson;
+                if (isFirstPerson) {
+                    camera.position.set(
+                        cube.position.x,
+                        cube.position.y + 0.5,
+                        cube.position.z
+                    );
+                } else {
+                    camera.position.set(0, 2, 5);
+                }
+            }
+        });
+
+        document.addEventListener('keyup', (event) => {
+            keysPressed[event.key.toLowerCase()] = false;
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Handle WASD movement
+            if (keysPressed['w']) {
+                cube.position.z -= moveSpeed;
+                if (isFirstPerson) {
+                    camera.position.z -= moveSpeed;
+                }
+            }
+            if (keysPressed['s']) {
+                cube.position.z += moveSpeed;
+                if (isFirstPerson) {
+                    camera.position.z += moveSpeed;
+                }
+            }
+            if (keysPressed['a']) {
+                cube.position.x -= moveSpeed;
+                if (isFirstPerson) {
+                    camera.position.x -= moveSpeed;
+                }
+            }
+            if (keysPressed['d']) {
+                cube.position.x += moveSpeed;
+                if (isFirstPerson) {
+                    camera.position.x += moveSpeed;
+                }
+            }
+
+            // Update controls
+            controls.target.copy(cube.position);
+            controls.update();
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+    </script>
+</body>
+</html>
